@@ -1,0 +1,23 @@
+# ninja log v6
+2	345	7469510453135480	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+347	462	7469510456583913	problema5.exe	996564f20ef74735
+5	339	7469513170764174	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+339	456	7469513174108711	problema5.exe	996564f20ef74735
+5	342	7469514277401629	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+343	456	7469514280773479	problema5.exe	996564f20ef74735
+6	343	7469514491949774	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+344	459	7469514495329869	problema5.exe	996564f20ef74735
+7	64	7469516137735688	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+2	336	7469516902603153	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+336	449	7469516905952205	problema5.exe	996564f20ef74735
+5	359	7469517028435386	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+360	469	7469517031983961	problema5.exe	996564f20ef74735
+5	340	7469518660158873	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+340	455	7469518663512241	problema5.exe	996564f20ef74735
+10	809	7469615987183432	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+810	1085	7469615995178985	problema5.exe	996564f20ef74735
+10	565	7469616614452783	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+9	530	7469616899823517	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+6	162	7469617309923082	problema5.exe	996564f20ef74735
+8	663	7469617578051009	CMakeFiles/problema5.dir/main.cpp.obj	bbd2cd8294ce5dda
+663	841	7469617584597376	problema5.exe	996564f20ef74735

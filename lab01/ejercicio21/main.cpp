@@ -15,8 +15,8 @@ int main()
     if (a!=0 and b!=0){
         while (not (c%a==0 and c%b==0))
             c++;
-        cout << "el MCM de " << a << " y " << b << " es " << c;
     }
+        cout << "el MCM de " << a << " y " << b << " es " << c;
     else{
         cout << "no existe un MCM si algun valor es 0";
     }
