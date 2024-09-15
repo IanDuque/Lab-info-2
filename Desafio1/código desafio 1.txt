@@ -1,1 +1,82 @@
-código de el Arduino desafio #1
+int analogPin = 4, val = 0, op = 0,count = 0;
+float amplitud=0, max=0, min=0, frecuencia=0;
+int pulsador1 = 2, pulsador2 = 4;
+int pul1 = 0, pul2 = 0;
+int *valarr = new int[3];
+bool v1 = false, v2 = false;
+bool muestreo=true, time=false;
+int picos=0;
+int start=0, end=0;
+void setup() {
+    Serial.begin(9600);
+    pinMode(pulsador1, INPUT);
+    pinMode(pulsador2, INPUT);
+}
+
+void loop() {
+    pul1 = digitalRead(pulsador1);
+    pul2 = digitalRead(pulsador2);
+    val = analogRead(analogPin);
+  
+    if (pul1 == HIGH) {
+        v1 = true;
+    }
+    if (pul2 == HIGH) {
+        v2 = true;
+    }
+    if (v1 == true & v2 == false) {
+          if(val>max){
+  			max = val;
+  		}	
+  			else if(val<min){
+  				min = val; 
+  			}
+      	*valarr = *(valarr + 1);
+        *(valarr + 1) = *(valarr + 2);
+        *(valarr + 2) = val;
+      	muestreo=false;
+      if (time==false){
+        	start= millis()/1000;
+        	time=true;
+      }
+      if (*valarr==max and *valarr!=*(valarr+1)){
+       		picos++; 
+      }
+    }
+    if (v1 == true & v2 == true & muestreo==false){
+      	end=millis()/1000;
+      	time=false;
+      	bool cuadrada= false;
+        bool senoidal= false;
+      	bool triangular= false;
+      	v1= false;
+      	v2=false;
+      	muestreo=true;
+    	for (int i = 0; i < 3; i++) {	
+          if (*valarr==*(valarr+1) and *valarr==*(valarr+2) or *valarr==-(*(valarr+1)) and *valarr==-(*(valarr+2))){
+            		cuadrada = true;
+        		}
+        
+    }
+	if (cuadrada== true and senoidal == true){
+        Serial.println("Señal desconocida");
+    }
+    if (cuadrada == true) {
+       Serial.println("Cuadrada");
+    } if (senoidal == true) {
+        Serial.println("Senoidal");
+      
+    }
+     amplitud = (max-min)/100;
+     frecuencia= picos/(end-start);
+     Serial.print("A:");	
+     Serial.print(amplitud);
+     //Serial.println(max);
+     //Serial.println(min);
+     //Serial.println (picos);
+     //Serial.println (start);
+     //Serial.println (end); 
+     Serial.print(" F:");
+     Serial.println(frecuencia);
+    }
+}
