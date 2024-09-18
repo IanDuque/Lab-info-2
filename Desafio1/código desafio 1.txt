@@ -1,14 +1,15 @@
-int analogPin = 4, val = 0, op = 0,count = 0;
+#include <Adafruit_LiquidCrystal.h>
+Adafruit_LiquidCrystal lcd(0);
+
+int analogPin = 0, pulsador1 = 2, pulsador2 = 4, pul1 = 0, pul2 = 0;
 float amplitud=0, max=0, min=0, frecuencia=0;
-int pulsador1 = 2, pulsador2 = 4;
-int pul1 = 0, pul2 = 0;
-int *valarr = new int[3];
-bool v1 = false, v2 = false;
-bool muestreo=true, time=false;
-int picos=0;
-int start=0, end=0;
+int *valarr = new int[3], val = 0;
+int tmaximos=0, max1=0;
+bool v1 = false, v2 = false, muestreo=true, time=false;
+int picos=0, start=0, end=0;
 void setup() {
     Serial.begin(9600);
+  	lcd.begin(16,2);
     pinMode(pulsador1, INPUT);
     pinMode(pulsador2, INPUT);
 }
@@ -17,20 +18,25 @@ void loop() {
     pul1 = digitalRead(pulsador1);
     pul2 = digitalRead(pulsador2);
     val = analogRead(analogPin);
-  
     if (pul1 == HIGH) {
         v1 = true;
     }
     if (pul2 == HIGH) {
         v2 = true;
     }
+  	tmaximos= millis()/1000;
+    if ((v1== false & v2 == false) and  tmaximos>=1) {
+      	if(val>max1){
+  			max1 = val;
+  		}	 
+ 	}
     if (v1 == true & v2 == false) {
-          if(val>max){
+      	if(val>max){
   			max = val;
   		}	
-  			else if(val<min){
-  				min = val; 
-  			}
+  		else if(val<min){
+  			min = val; 
+  		}
       	*valarr = *(valarr + 1);
         *(valarr + 1) = *(valarr + 2);
         *(valarr + 2) = val;
@@ -40,11 +46,12 @@ void loop() {
         	time=true;
       }
       if (*valarr==max and *valarr!=*(valarr+1)){
-       		picos++; 
+       		picos=picos+1; 
       }
     }
     if (v1 == true & v2 == true & muestreo==false){
       	end=millis()/1000;
+      	int tipo=0;
       	time=false;
       	bool cuadrada= false;
         bool senoidal= false;
@@ -52,31 +59,43 @@ void loop() {
       	v1= false;
       	v2=false;
       	muestreo=true;
-    	for (int i = 0; i < 3; i++) {	
-          if (*valarr==*(valarr+1) and *valarr==*(valarr+2) or *valarr==-(*(valarr+1)) and *valarr==-(*(valarr+2))){
-            		cuadrada = true;
-        		}
-        
+      	amplitud = (max-min)/200;
+        frecuencia= picos/(end-start);
+      	picos=0;
+        if ((*valarr==*(valarr+1) and *(valarr+1)==*(valarr+2) or *valarr==-(*(valarr+1)) and *valarr==-(*(valarr))) and cuadrada==false){
+            cuadrada = true;
+            tipo=tipo+1;
+        }
+        if ((max==max1) and (*valarr!=*(valarr+1) and *valarr!=*(valarr+2)) and senoidal==false){
+           	senoidal= true;
+            tipo=tipo+1;
+        }
+        if ((max<max1) and triangular==false) {
+           	triangular= true;
+            tipo=tipo+1;
+        }
+    lcd.setCursor(0,0);  
+	if (tipo!=1){
+        lcd.print("Desconocida");
     }
-	if (cuadrada== true and senoidal == true){
-        Serial.println("Señal desconocida");
-    }
-    if (cuadrada == true) {
-       Serial.println("Cuadrada");
-    } if (senoidal == true) {
-        Serial.println("Senoidal");
+    if (cuadrada == true and tipo==1) {
+       lcd.print("Cuadrada");
+    } 
+      if (senoidal == true and tipo==1) {
+       lcd.print("Senoidal");
       
     }
-     amplitud = (max-min)/100;
-     frecuencia= picos/(end-start);
-     Serial.print("A:");	
-     Serial.print(amplitud);
-     //Serial.println(max);
-     //Serial.println(min);
-     //Serial.println (picos);
-     //Serial.println (start);
-     //Serial.println (end); 
-     Serial.print(" F:");
-     Serial.println(frecuencia);
+      if (triangular== true and tipo==1){
+       lcd.print("Triangular");		 
+    } 
+     lcd.setCursor(0,1);
+     lcd.print("A:");	
+     lcd.print(amplitud);
+     lcd.print("V");
+     lcd.print(" F:");
+     lcd.print(frecuencia);
+     lcd.print("Hz");
+     delay(3000);
+     lcd.clear();
     }
 }
