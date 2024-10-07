@@ -1,0 +1,629 @@
+#include <iostream>
+#include <fstream>
+#include <math.h>
+#include <string>
+#include <string.h>
+using namespace std;
+
+//codificacion y decodificacion
+void letra_a_binario(char letra, char * binario);
+int binario_a_letra(char * binario);
+char * codificar(char * cadena, int tam_cadena,int n);
+char * decodificar(char *cad_codificada, int tam_cad, int bits_por_bloque);
+
+//manejo de cadenas
+void concatenar(char * cadena_1,char * cadena_2,int tam_1,int tam_2);
+
+//cajero
+void admin();
+void usuario();
+int contar_caracteres(char * cadena);
+void retirar_dinero(int* saldo);
+bool comparar_strings(string original, string ingresado, int tam);
+
+//variables globales
+int semilla = 4;
+fstream data_in;
+
+int main()
+{
+    int opcion = 0;
+            do
+            {
+                cout<<"BIENVENIDO" <<endl<< "Ingresar como:" <<endl<< "1. Administrador" <<endl<< "2. Usuario" <<endl<< "3. Salir" <<endl<< "opcion: ";
+                cin>>opcion;
+
+                switch(opcion)
+                {
+                case 1: admin(); break;
+
+                case 2: usuario(); break;
+
+                case 3: break;
+
+                default: cout<<endl<<"Ingresaste una opcion invalida"<<endl;
+                }
+
+
+            }while(opcion != 3);
+
+
+    return 0;
+}
+
+//cajero
+
+bool comparar_strings(string original, string ingresado,int tam)
+{
+
+    if(ingresado.size() != tam)
+        return false;
+
+    for(int u = 0; u < tam; u++)
+    {
+        if(original[u] != ingresado[u])
+            return false;
+    }
+    return true; // si se llegó al final sin encontrar diferencias
+}
+
+void usuario()
+{
+    try
+    {
+        data_in.close();
+
+        data_in.open("users.txt", ios::in | ios::out | ios::app);
+
+        if(! data_in.is_open()) //se verifica que esté abierto correctamente
+            throw '1';
+
+        string cedula,clave,linea,aux,saldo;
+
+        int opcion = 0,tam_saldo = 0, saldo_int;
+
+
+        cout<<endl<<"Ingresando como usuario..."<<endl<<endl<<"Ingrese su cedula: ";
+        cin >> cedula;
+
+        for(int i = 0; getline(data_in,linea) ; i++)
+        {
+            aux = decodificar(&linea[0],80,semilla); // se decodifica la cedula
+            
+            if(comparar_strings(aux,cedula,10)) // se valida que la cedula exista
+            {
+                cout<<endl<<"Ingrese su clave: ";
+                cin>> clave;
+
+                aux = decodificar(&linea[80],32,semilla); // se decodifica la clave
+
+                if(comparar_strings(aux,clave,4))
+                {
+
+                    cout<<"Ingreso exitoso..."<<endl;
+
+                    tam_saldo = linea.size() - 112;
+
+                    saldo = decodificar(&linea[112],tam_saldo,semilla);
+
+                    saldo_int = stoi(saldo);
+
+                    saldo_int -= 1000; // se retira comision
+
+                    do
+                    {
+
+                    cout<<endl<<"Seleccione una opcion: \n1. Retirar dinero \n2. Consultar saldo \n3. Salir \nOpcion: ";
+                    cin>>opcion;
+
+
+                    switch(opcion)
+                    {
+                    case 1:
+                    {
+                        if(data_in.is_open())
+                            data_in.close(); // se cierra para abrir en modo escritura
+
+                        retirar_dinero(&saldo_int); // se retira el saldo
+
+                        data_in.open("users.txt", ios::in | ios::app);
+
+                        fstream copia; // se crea un archivo copia para editar linea especifica
+                        copia.open("copia.txt", ios::out | ios::app);
+
+                        if(! copia.is_open())
+                            throw '2';
+
+                        aux = to_string(saldo_int); // se convierte ese saldo en string
+
+                        copia.write(&linea[0],linea.size()-tam_saldo); // se copia la linea del usuario actual sin su saldo anterior
+                        copia.write(codificar(&aux[0],aux.size(),semilla),aux.size()*8); //se copia el saldo actual
+                        copia.put('\n');
+
+                        for(int u = 0; getline(data_in,linea);u++)
+                        {
+                            if(u == i) // si la linea actual es igual a la del usuario en el archivo original se omite por que ya esta copiada
+                                continue;
+                            copia.write(&linea[0],linea.size());
+                            copia.put('\n');
+
+                        }
+                        copia.close();
+                        data_in.close();
+
+                        remove("users.txt"); // se borra el anterior
+                        
+                        rename("copia.txt","users.txt"); // se cambia el nombre de la copia
+
+                        break;
+                    }
+                    case 2:
+                        cout<<endl<<"Tu saldo es: "<<saldo_int<<endl<<endl; break;
+
+                    case 3: break;
+
+                    default:
+                        cout<<endl<<"Ingresaste una opcion invalida"<<endl; break;
+                    }
+                    }while(opcion != 3);
+                }
+
+                else
+                    cout<<"Clave INCORRECTA. Intentelo nuevamente"<<endl;
+
+                if(data_in.is_open())
+                    data_in.close();
+
+                return;
+            }
+        }
+
+        if(data_in.is_open())
+            data_in.close();
+
+        cout<<endl<<"No se encotro la cedula digitada, intentelo nuevamente"<<endl;
+
+    }catch(char err)
+    {
+        cout<<endl<<"se ha producido un error al abrir el archivo ";
+        if(err == '1')
+            cout<<"users.txt";
+        else
+            cout<<"copia.txt";
+
+        cout<<endl;
+    }
+
+}
+
+void retirar_dinero(int *saldo)
+{
+    int retirar = 0;
+
+
+    cout<<endl<<"Ingrese cuanto dinero desea retirar: ";
+    cin>>retirar;
+
+    if(*saldo > retirar)
+    {
+        *saldo -= retirar;
+        cout<<endl<<"Su nuevo saldo es: "<<*saldo<<endl;
+    }
+
+    else
+        cout<<"Saldo insuficiente."<<endl<<"Tu saldo es: "<<*saldo<<endl;
+
+    cout<<endl;
+
+}
+
+
+void admin()
+{
+    try
+    {
+        data_in.open("sudo.txt", ios::in | ios::out | ios::app);
+
+        if(! data_in.is_open())
+            throw '1';
+
+        char clave_ingresada[30], *clave_real = new char[240];
+        bool clave_valida = false;
+        int tam_clave = 0;
+
+        data_in.seekp(0);
+
+        string linea;
+
+        if(getline(data_in,linea)) // se verifica si existe algun caracter dentro del archivo sudo
+        {
+            cout << endl << "Ingrese su clave: ";
+            cin >> clave_ingresada;
+
+            tam_clave = contar_caracteres(clave_ingresada);
+
+            clave_real = decodificar(&linea[0],linea.size(),semilla);
+
+            for(int i = 0; i < tam_clave ; i++)
+            {
+                if(tam_clave != linea.size()/8)
+                    break;
+
+                if(clave_ingresada[i] != clave_real[i]) // se comprueba cada posicion de la clave original con la que se ingresó
+                    break;
+
+                else
+                    clave_valida = true;
+            }
+
+            if(clave_valida)
+            {
+                data_in.close();
+
+                data_in.open("users.txt", ios::out | ios::app);
+
+                if(! data_in.is_open()) // error al abrir el archivo de escritura
+                    throw '2';
+
+                string cedula,saldo,clave;
+                cout<<endl<<"La clave es CORRECTA. Ingresando al sistema..."<<endl<<endl<<"Ingresa los datos del nuevo usuario: "<<endl;
+
+                // se ingresa a cada uno de los datos y se hace su respectiva verificacion para cada uno de ellos
+                do
+                {
+                    cout<<"Cedula (ingrese 10 digitos): ";
+                    cin>>cedula;
+
+                    for(int i = 0; i < cedula.size(); i++)
+                    {
+                        if(!(cedula[i] >= 48 and cedula[i] <= 57)) // si se ingresó algun caracter invalido
+                        {
+                            cedula = "0";
+                            break;
+                        }
+                    }
+
+                }while(cedula.size() != 10);
+
+                do
+                {
+                    cout<<"Clave (Ingrese solo 4 digitos): ";
+                    cin>>clave;
+
+                    if(clave.size() != 4)
+                        continue;
+
+                    for(int i = 0; i < clave.size(); i++)
+                    {
+                        if(!(clave[i] >= 48 and clave[i] <= 57)) // si se ingresó algun caracter invalido
+                        {
+                            clave = "";
+                            break;
+                        }
+                    }
+
+                }while(clave.size() != 4);
+
+                do
+                {
+                    cout<<"Saldo (ingrese solo digitos): ";
+                    cin>>saldo;
+
+                    for(int i = 0; i < saldo.size(); i++)
+                    {
+                        if(!(saldo[i] >= 48 and saldo[i] <= 57)) // si se ingresó algun caracter invalido
+                        {
+                            saldo = "";
+                            break;
+                        }
+                    }
+
+                }while(saldo == "");
+
+
+                // se escribe cada uno de los datos del usuario
+                data_in.write(codificar(&cedula[0],10,semilla),80);
+                data_in.write(codificar(&clave[0],4,semilla),32);
+                data_in.write(codificar(&saldo[0],saldo.size(),semilla),saldo.size()*8);
+                data_in.put('\n');
+
+                data_in.close();
+
+                cout<<endl<<"Se ha creado el usuario CORRECTAMENTE"<<endl;
+
+                return;
+
+
+            }
+
+            else
+            {
+                cout<<endl<<"La clave ingresada es INCORRECTA. Intentelo de nuevo."<< endl;
+                data_in.close();
+
+                delete[] clave_real;
+                return;
+
+            }
+        }
+        
+        else // en caso que no exista el usuario administrador
+        {
+            if(data_in.is_open())
+                data_in.close();
+
+            data_in.open("sudo.txt", ios::out | ios::app);
+
+            if(! data_in.is_open())
+                throw '2';
+
+            cout<<endl<<"NO HAY USUARIO ADMINISTRADOR REGISTRADO" <<endl<< "Ingrese una clave para el admin: ";
+            cin>>clave_ingresada;
+
+            tam_clave = contar_caracteres(clave_ingresada);
+
+            linea = codificar(clave_ingresada, tam_clave, semilla);
+
+            data_in.write(linea.c_str(),tam_clave*8); // se codifica la clave ingresada y se ingresa en el archivo
+            data_in.put('\n');
+
+
+            cout<<endl<<"Se ha guardado el nuevo admimistrador."<<endl<<endl;
+            data_in.close();
+
+            delete[] clave_real;
+            return;
+        }
+    }catch(char err){
+        if(err == '1')
+            cout<<endl<<"Se ha producido un error al querer leer el archivo";
+        else
+            cout<<endl<<"Se ha producido un error al querer escribir en el archivo";
+    }
+}
+
+// manejo de cadenas
+int contar_caracteres(char *cadena)
+{
+    int cont = 0;
+
+    for (int i = 0; cadena[i] != 0 ; i++)
+        cont++;
+
+    return cont;
+}
+
+
+//codificacion y decodificacion
+char * decodificar(char * cad_codificada,int tam_cad,int bits_por_bloque)
+{
+    char * original = new char [tam_cad], *texto = new char [tam_cad/8] ;
+
+    int cont_1 = 0,cont_0 = 0,cont_bloques = 0;
+
+    //se decodifica la primera linea
+
+
+    for(int i = 0; i < bits_por_bloque ; i++)
+    {
+        if(cad_codificada[i] == '1')
+            original[i] = '0';
+        else
+            original[i] = '1';
+    }
+
+    for(int i = 0; i < bits_por_bloque ; i++)
+    {
+        if(original[i] == '1')
+            cont_1++;
+        else
+            cont_0++;
+    }
+
+    cont_bloques++;
+
+    //se decodifican las lineas siguientes
+    while(cont_bloques < tam_cad/bits_por_bloque)
+    {
+        if(cont_0 == cont_1)
+        {
+            for(int i = bits_por_bloque * cont_bloques; i < (bits_por_bloque * cont_bloques)+ bits_por_bloque ; i++)
+            {
+                if(cad_codificada[i] == '1')
+                    original[i] = '0';
+                else
+                    original[i] = '1';
+            }
+        }
+
+        else if(cont_0 > cont_1)
+        {
+            for(int i = (bits_por_bloque * cont_bloques); i < (bits_por_bloque * cont_bloques)+ bits_por_bloque ; i++)
+            {
+                if(((i+1 - (bits_por_bloque * cont_bloques))%2) == 0 )
+                {
+                    if(cad_codificada[i] == '1')
+                        original[i] = '0';
+                    else
+                        original[i] = '1';
+                }
+                else
+                    original[i] = cad_codificada[i];
+            }
+        }
+
+        else
+        {
+            for(int i = (bits_por_bloque * cont_bloques); i < (bits_por_bloque * cont_bloques)+ bits_por_bloque ; i++)
+            {
+                if(((i+1 - (bits_por_bloque * cont_bloques))%3) == 0 )
+                {
+                    if(cad_codificada[i] == '1')
+                        original[i] = '0';
+                    else
+                        original[i] = '1';
+                }
+                else
+                    original[i] = cad_codificada[i];
+            }
+        }
+
+        cont_0 = 0;
+        cont_1 = 0;
+
+
+        for(int i = (bits_por_bloque * cont_bloques); i < (bits_por_bloque * cont_bloques)+ bits_por_bloque ; i++)
+        {
+            if(original[i] == '1')
+                cont_1++;
+            else
+                cont_0++;
+        }
+
+        cont_bloques++;
+
+    }
+
+    cont_1 = 0;
+
+    for(int i = 0; i < tam_cad ; i+= 8)
+    {
+        texto [cont_1] = binario_a_letra(&original[i]);
+        cont_1++;
+    }
+
+    delete[] original;
+
+    return texto;
+}
+
+char * codificar(char * cadena, int tam_cadena, int n)
+{
+    int cont_0 = 0,cont_1 = 0,cont_bloques = 0;
+    char * nueva = new char [tam_cadena * 8],* codificado = new char [tam_cadena * 8], binario[8];
+
+
+    // se hace transforma a binario el primer caracter
+    letra_a_binario(cadena[0],binario);
+
+    concatenar(nueva,binario,0,8);
+
+    // se transforma a binario el resto de caracteres
+    for (int i = 0; i < tam_cadena; i++)
+    {
+        letra_a_binario(cadena[i+1],binario);
+        concatenar(nueva,binario,(i*8)+8,8);
+    }
+
+    for (int i = 0; i < tam_cadena*8; i++)
+        codificado[i] = nueva[i];
+
+    while(cont_bloques < (tam_cadena*8)/n)
+    {
+
+
+        if(cont_bloques == 0)
+        {
+        //se codifica el primer bloque
+
+            for(int i = 0; i < n; i++) // se cuentan los 1 y 0
+            {
+                if(nueva[i] == '1')
+                    cont_1++;
+                else
+                    cont_0++;
+            }
+
+            for (int i = 0; i < n; i++) // se intercambian los 1 y 0
+            {
+                if(nueva[i] == '1')
+                    codificado[i] = '0';
+                else
+                    codificado[i] = '1';
+            }
+        }
+
+        else
+        {
+
+            for(int i = n*cont_bloques - n; i < n*cont_bloques; i++) // se cuentan los 1 y 0
+            {
+                if(nueva[i] == '1')
+                    cont_1++;
+                else
+                    cont_0++;
+            }
+
+            if(cont_0 == cont_1)
+            {
+                for (int i = n*cont_bloques; i < (n*cont_bloques)+n; i++) // se intercambian los 1 y 0
+                {
+                    if(nueva[i] == '1')
+                        codificado[i] = '0';
+                    else
+                        codificado[i] = '1';
+                }
+            }
+
+            else if(cont_0 > cont_1)
+            {
+                for (int i = (n*cont_bloques) + 1; i < (n*cont_bloques) + n; i+=2)
+                {
+                    if(nueva[i] == '1')
+                        codificado[i] = '0';
+                    else
+                        codificado[i] = '1';
+                }
+            }
+
+            else
+            {
+                for (int i = (n*cont_bloques) + 2; i < (n*cont_bloques) +n; i+=3)
+                {
+                    if(nueva[i] == '1')
+                        codificado[i] = '0';
+                    else
+                        codificado[i] = '1';
+                }
+            }
+        }
+        cont_bloques ++;
+        cont_0 = 0;
+        cont_1 = 0;
+
+    }
+
+    return codificado;
+}
+
+int binario_a_letra(char * binario)
+{
+    int letra = 0;
+
+    for (int i = 0; i < 8 ;i++)
+    {
+        if(binario[i] == '1')
+            letra += pow(2,7-i);
+    }
+    return letra;
+}
+
+void letra_a_binario(char letra, char * binario)
+{
+    int ascii = letra;
+
+    for(int i = 7; i >= 0; i-- )
+    {
+        binario[i] = ascii % 2 + 48;
+        ascii /=2;
+    }
+}
+
+
+// manejo de cadenas
+
+void concatenar(char * cadena_1, char * cadena_2, int tam_1, int tam_2)
+{
+    for(int i = 0; i < tam_2; i++)
+        cadena_1[i + tam_1] = cadena_2[i];
+}
