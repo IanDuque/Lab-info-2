@@ -1,0 +1,370 @@
+#include <iostream>
+#include <random>
+#include <cstdlib>
+#include <string>
+#include <cctype>
+#include <ctime>
+#include <fstream>
+using namespace std;
+//clase estacion de servicio que cuenta con los atributos:nombre,region,cantidad de surtidores de esa estacion, capacidad de cada uno
+//de los 3 tanques de combustible,un arreglo que guarda los valores originales de estos y el identificador de la estacion.
+class E_S{
+private:
+    string nombre;//usado en constructor
+    string region;//usado en constructor
+    string identificador;
+    int surtidores;//usado en constructor
+    int captanque[3];
+    int captanoriginal[3];
+public:
+    E_S(string _nombre,string _region,int _surtidores){
+        nombre= _nombre;
+        region=_region;
+        surtidores=_surtidores;
+    }
+    void setcaptan(int a,int b,int c){
+        *(captanque)=a;
+        *(captanque+1)=b;
+        *(captanque+2)=c;
+    }
+    void setcaptanoriginal(int*){
+        for (int i=0; i<3 ; i++){
+            *(captanoriginal+i)=*(captanque+i);
+        }
+    }
+    void setidentificador(int ID){
+        identificador= to_string(ID+1);
+    }
+    string getidentificador(){
+        return identificador;
+    }
+    ~E_S(){ //Destructor de objetos de la clase E_S
+        cout << "Estacion de servicio eliminada" << endl;
+    } 
+    
+};
+/*clase surtidor que cuenta con los siguientes atributos:identificador,fecha para cuando se registren ventas, booleano que
+indica si esta activo o no, guarda el documento de el cliente al que se le vendio, almacena tambien el valor de lo vendido en la
+transaccion respectiva(se liga con el documento y la fecha) y los litros vendidos de cada tipo.*/
+class Surtidor{
+private:
+    string identificador;//usado en constructor
+    bool activo;//usado en constructor
+    int ventaS;
+    int Litrosvend[3];
+public:
+    /*constructor que genera un objeto de la clase Surtidor con un codigo identificador creado a partir de el codigo de la estacion a la que 
+    esta ligado y ademas se inicializa como activo para poder funcionar desde su creacion.*/
+    Surtidor(int ID_ES,string _identificador){ //ID_ES es el identificador de la estacion a la que se agrega el surtidor.
+        identificador= to_string(ID_ES)+_identificador;
+        activo=true;
+    }
+    void setventactual(int ventaactual){
+        ventaS=ventaactual;
+    }
+    void setlitrosvend(int R, int P, int E){
+        *(Litrosvend)=R;
+        *(Litrosvend+1)=P;
+        *(Litrosvend+2)=E;
+    }
+    void setActividad(bool actividad){
+        activo=actividad;
+    }
+    ~Surtidor(){    //Destructor de objetos de la clase Surtidor.
+        cout << "Surtidor eliminado" << endl;
+    } 
+    
+};
+
+//variables y matrices para llevar control de cada uno de los precios por region y ventas por estacion.
+unsigned short int opcion;
+unsigned short int ID;
+int preciosComb[3][3]={{15000,20000,25000},
+                       {16000,19000,25000},
+                       {15500,19750,23000}};
+/*Funcion que basandose en el tipo de combustible solicitado devuelve el precio que se encuentra en un arreglo con los respectivos valores 
+de cada uno.
+recibe un string con el que asigna un valor al precio y lo retorna.*/
+int tipoComb(string tcomb,int precios[3][3],unsigned short int region){
+    int precio=0;
+    if (tcomb=="regular"){
+        precio=*(*(precios+region));
+    }
+    else if (tcomb=="premium"){
+        precio=*(*(precios+region)+1);
+    }
+    else if (tcomb=="ecoextra"){
+        precio=*(*(precios+region)+2);
+    }
+    return precio;
+}
+//Funcion que convierte una cadena de caracteres a minuscula, usado para facilitar validaciones.
+string pasaramin(string cadena){
+    string cadenamin="";
+    for (int i=0; i<cadena.length(); i++){
+        cadena[i]=tolower(cadena[i]);
+        cadenamin= cadenamin+cadena[i];
+    }
+    return cadenamin;
+}
+
+/*Funcion que calcula el precio total de una venta teniendo en cuenta la cantidad de combustible, tipo y precio.
+Se apoya en otra funcion que le da el valor de el tipo de combustible solicitado para devolver el total calculado.*/
+int venta(string tcomb, float cantidad, unsigned short int surtidor){
+    unsigned short int region;
+    unsigned int doc;
+    string regionp;
+    string metodo;
+    cout << "ingrese la region de compra\n"<< "0.norte\n" << "1.central\n" << "2.sur" << endl;
+    cin>>region;
+    while (region!=0 and region !=1 and region!=2){
+        cout << "ingrese un valor valido\n" << "0. norte\n" << "1.central\n" << "2.sur" << endl;
+        cin>>region;
+    }
+    tcomb=pasaramin(tcomb);
+    int precio=tipoComb(tcomb,preciosComb,region);
+    while (precio==0){
+        cout << "Tipo de combustible no a la venta" << endl;
+        cin>> tcomb;
+        precio=tipoComb(tcomb,preciosComb,region);
+    }
+    time_t fecha = time(NULL);
+    cout << "Ingrese el numero de documento para registrar en la venta" << endl;
+    cin >> doc;
+    while(doc>9999999999 and doc<1000000000){
+        cout << "el numero de documento ingresado es invalido" << endl;
+        cin >> doc;
+    }
+    cout << "Seleccione el metodo de pago\n" << "0.Efectivo\n" << "1.Tcredito\n" << "2.Tdebito" << endl; 
+    cin>>metodo;
+    while (metodo!="0" and metodo!="1" and metodo!="2"){
+        cout << "ingrese un valor valido\n" << "0. Efectivo\n" << "1.Tcredito\n" << "2.Tdebito" << endl;
+        cin>>metodo;
+    }
+    if(metodo=="0"){
+        metodo="Efectivo";
+    }
+    else if (metodo=="1"){
+        metodo="Tcredito";
+    }
+    else {
+        metodo="Tdebito";
+    }
+    if(region==0){
+        regionp="norte";
+    }
+    else if (region==1){
+        regionp="central";
+    }
+    else {
+        regionp="sur";
+    }
+    float totalventa=cantidad*precio;
+    cout << "Venta registrada" << endl;
+    cout << ctime(&fecha) << "Se han vendido " << cantidad << " litros "<< ", tipo de combustible vendido: " << tcomb << ", valor total pagado: " << totalventa <<", documento cliente: " << doc << ", metodo de pago: " << metodo << ", region de venta: " << regionp /* << ", vendido por el surtidor: " << surtidor*/ << endl;  
+    ofstream historial;
+    historial.open("historial.txt", ios::app);
+    if (!historial.is_open()) {
+        cerr << "Error al abrir el archivo." << endl; 
+        return 1; 
+    }
+    historial << ctime(&fecha) << "Se han vendido " << cantidad << " litros "<< ", tipo de combustible vendido: " << tcomb << ", valor total pagado: " << totalventa<< ", documento cliente: " << doc << ", metodo de pago: " << metodo << ", region de venta: " << regionp /* << ", vendido por el surtidor: " << surtidor*/<< endl;
+    historial.close();
+    return totalventa;
+}
+//Funcion que basado en la region seleccionada cambia los valores de un arreglo por los nuevos precios de cada tipo de combustible.
+void Fijarprecios(int P_regiones[3][3]){
+    unsigned short int region;
+    cout << "ingrese la region a la que desea cambiar los precios del combustible\n"<< "0. Norte\n" << "1.Central\n" << "2.Sur" << endl;
+    cin >> region;
+    unsigned int nuevoprecio;
+    for (int i=0;i<3;i++){
+        cout << "ingrese el valor nuevo para cada combustible en orden(regular,premium,extraeco)" << endl;
+        cin >> nuevoprecio;
+        *(*(P_regiones+i)+region)= nuevoprecio;
+    }
+}
+//Funcion que pide los valores necesarios para invocar al constructor de la clase E_S y genera un objeto nuevo de dicha clase.
+void AgregarES(){
+    cout << "\n\n";
+    string name;
+    string region;
+    int surtidores;
+    cout << "Ingrese el nombre de la nueva estacion" << endl;
+    cin >> name;
+    cout << "Ingrese la region a la que pertenece la estacion" << endl;
+    cin >> region;
+    region=pasaramin(region);
+    while (region!="norte" and region!="central" and region!="sur"){
+        cout << "la region debe ser: norte, central o sur" << endl;
+        cin >> region;
+        region=pasaramin(region);
+    }
+    cout << "Ingrese la cantidad de surtidores de la estacion(2-12)" << endl;
+    cin >> surtidores;
+    do{
+        if (surtidores<2){
+            cout << "La cantidad de surtidores debe ser mayor de 2, intente de nuevo" << endl;
+            cin >> surtidores;
+        }
+        if (surtidores>12){
+            cout << "La cantidad de surtidores debe ser menor de 12, intente de nuevo" << endl;
+            cin >> surtidores;
+        }
+    }
+    while (surtidores<2 or surtidores>12);
+    E_S* nuevaestacion= new E_S(name,region,surtidores);
+    cout << "Se ha creado la estacion " << name << " en la region " << region << " con " << surtidores << " surtidores" << endl;
+    opcion=0;
+}
+//Funcion que genera un objeto de la clase surtidor y lo agrega a una estacion.
+/*int Agrelimsurtidor(){
+    cout << "\n\n";
+    cout << "Ingrese la estacion a la que desea agregar un surtidor";
+    ofstream surtidores;
+    surtidores.open("surtidores.txt", ios::app);
+    if (!surtidores.is_open()) {
+        cerr << "Error al abrir el archivo." << endl; 
+        return 1; 
+    }
+    unsigned short int 
+    //surtidores << 
+    //surtidores.close();
+    
+}*/
+//Funcion que elimina un objeto de la clase E_S buscando su identificador dentro de un arreglo y al encontrarlo lo elimina.
+void EliminarES(){
+    unsigned short int buscadorID;
+    unsigned short int eliminado;
+    cout << "Ingrese el codigo identificador de la E/S que desea eliminar" << endl;
+    cin >> buscadorID;
+    if (eliminado==0){
+        cout << "No se ha encontrado una estacion con el codigo ingresado" << endl;
+    }
+}
+/*Funcion que permite acceder a diferentes funciones para hacer cambios a la red nacional como puede ser agregar/eliminar estaciones,
+calcular las ventas totales de cada una, fijar los precios para toda una region y regresar al menu principal del sistema.*/
+void GestionR(){
+    cout << "\n\n";
+    cout << "Seleccione una opcion: " << endl;
+    cout << "1.Agregar estaciones de servicio\n" << "2.Eliminar E/S de la red nacional\n" << "3.Calcular monto total de ventas de cada E/S en el pais por tipo de combustible\n" << "4.Fijar precios para toda la red\n" << "5.Volver al menu principal" << endl;
+    cin >> opcion;
+    while (opcion!=5){
+        switch(opcion){
+        case 1:
+            AgregarES();
+            break;
+        case 2:
+            //EliminarES();
+            break;
+        case 3:
+            //CalcVtotales();
+            break;
+        case 4:
+            Fijarprecios(preciosComb);
+            break;
+        default:
+            if (opcion!=0){
+                cout << "opcion invalida, ingrese otra" << endl;
+            cin >> opcion;
+            }
+            else{
+                 cout << "\n\n";
+                 cout << "Seleccione una opcion: " << endl;
+                 cout << "1.Agregar estaciones de servicio\n" << "2.Eliminar E/S de la red nacional\n" << "3.Calcular monto total de ventas de cada E/S en el pais por tipo de combustible\n" << "4.Fijar precios para toda la red\n" << "5.Volver al menu principal" << endl;
+                 cin >> opcion;
+            }
+            break;
+        }
+    }
+}
+//Funcion que permite seleccionar una opcion correspondiente al menu de gestion de estaciones.
+void GestionES(){
+    cout << "\n\n";
+    cout << "Seleccione una opcion: " << endl;
+    cout << "1.Agregar/eliminar surtidor\n" << "2.Activar/desactivar surtidor\n" << "3.Consultar historico de transacciones de c/u de los surtidores\n" << "4.Conocer cantidad de litros vendidos de cada tipo\n"  << "5.Asignar capacidad del tanque de suministro\n" << "6.Regresar al menu principal\n" << endl;
+    cin >> opcion;
+    while (opcion!=7){
+        switch(opcion){
+        case 1:
+            //Agrelimsurtidor();
+            break;
+        case 2:
+            //Actdesactsurtidor();
+            break;
+        case 3:
+            //ConsultarH();
+            break;
+        case 4:
+            //Cantlitrosvend();
+            break;
+            break;
+        case 5:
+            //Asignarcap();
+            break;
+        default:
+            cout << "opcion invalida, ingrese otra" << endl;
+            cin >> opcion;
+        }
+    }
+}
+void Sistfugas(){
+
+}
+/*Funcion que pide el tipo de combustible a vender, genera numeros aleatorios para el surtidor(luego se pasan a str para elegir el surtidor 
+de venta),litros(3-20)*/
+void SimV(){
+    unsigned short int estacion;
+    unsigned short int litros;
+    unsigned short int surtidor;
+    string tipocombustible;
+    cout << "Ingrese el tipo de combustible que desea comprar (regular,premium,ecoextra)" << endl;
+    cin >> tipocombustible;
+    tipocombustible=pasaramin(tipocombustible);
+    litros=rand()% 20 + 3;
+    /*surtidor=rand()+1  identificador de el surtidor dentro de un arreglo y si no se encuentra se genera nuevamente.
+    for (int i=0; i<)*/
+    venta(tipocombustible,litros,surtidor);
+    opcion=5;
+}
+//Funcion principal que permite el acceso a las diferentes funciones definidas en el programa.
+void menu(){
+    cout << "Que operacion desea realizar?" << endl;
+    cout << "1.Gestion de la red\n" << "2.Gestion de estaciones de servicio\n" << "3.Acceder al sistema nacional de fugas\n" << "4.Simular una venta\n" << "0.Salir" << endl;
+    cin >> opcion;
+    while (opcion!=0){
+        switch(opcion){
+        case 1:
+            GestionR();
+            break;
+        case 2:
+            GestionES();
+            break;
+        case 3:
+            //Sistfugas();
+            break;
+        case 4:
+            SimV();
+            break;
+        default:
+            if (opcion!=5 and opcion!=6){
+                cout << "opcion invalida, ingrese otra" << endl;
+                cin>>opcion;
+            }
+            else{
+                cout << "\n\n";
+                cout << "Que operacion desea realizar?" << endl;
+                cout << "1.Gestion de la red\n" << "2.Gestion de estaciones de servicio\n" << "3.Acceder al sistema nacional de fugas\n" << "4.Simular una venta\n" << "0.Salir" << endl;
+                cin >> opcion;
+            }
+            break;
+        }
+    }
+}
+int main(){
+    srand(time(0)); //usado para que cada vez que se ejecute el programa todos los numeros aleatorios son diferentes.
+    cout << "Bienvenido a TerMax" << endl;
+    menu();
+    cout << "Gracias por usar nuestro sistema" << endl;
+    return 0;
+}
