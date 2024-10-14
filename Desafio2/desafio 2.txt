@@ -1,33 +1,35 @@
 #include <iostream>
 #include <random>
 #include <cstdlib>
+#include <cstring>
 #include <string>
 #include <cctype>
 #include <ctime>
 #include <fstream>
 using namespace std;
-//clase estacion de servicio que cuenta con los atributos:nombre,region,cantidad de surtidores de esa estacion, capacidad de cada uno
-//de los 3 tanques de combustible,un arreglo que guarda los valores originales de estos y el identificador de la estacion.
+
+/*clase estacion de servicio que cuenta con los atributos:nombre,region,cantidad de surtidores de esa estacion, capacidad de cada uno
+de los 3 tanques de combustible,un arreglo que guarda los valores originales de estos y el identificador de la estacion.*/
 class E_S{
 private:
     string nombre;//usado en constructor
     string region;//usado en constructor
-    string identificador;
-    int surtidores;//usado en constructor
-    int captanque[3];
-    int captanoriginal[3];
+    string identificador;//usado en constructor de la clase Surtidor
+    unsigned short int surtidores;//usado en constructor
+    unsigned short int captanque[3];
+    unsigned short int captanoriginal[3];
 public:
     E_S(string _nombre,string _region,int _surtidores){
         nombre= _nombre;
         region=_region;
         surtidores=_surtidores;
     }
-    void setcaptan(int a,int b,int c){
-        *(captanque)=a;
-        *(captanque+1)=b;
-        *(captanque+2)=c;
+    void setcaptan(){
+        *(captanque)=rand()%200 +100;
+        *(captanque+1)=rand()%200 +100;
+        *(captanque+2)=rand()%200 +100;
     }
-    void setcaptanoriginal(int*){
+    void setcaptanoriginal(){
         for (int i=0; i<3 ; i++){
             *(captanoriginal+i)=*(captanque+i);
         }
@@ -35,12 +37,24 @@ public:
     void setidentificador(int ID){
         identificador= to_string(ID+1);
     }
+    void setsurtidores(unsigned short int AoE){
+        surtidores=surtidores+AoE;
+    }
+    string getcapacidadO(){
+        string capacidad="";
+        for (int i=0; i<3; i++){
+            string capstring=to_string(captanoriginal[i]);
+            capacidad=capacidad+ capstring +"P";
+        }
+        return capacidad;
+    }
     string getidentificador(){
         return identificador;
     }
-    ~E_S(){ //Destructor de objetos de la clase E_S
-        cout << "Estacion de servicio eliminada" << endl;
-    } 
+    unsigned short int getsurtidores(){
+        return surtidores;
+    }
+    ~E_S(){} //Destructor de objetos de la clase E_S
     
 };
 /*clase surtidor que cuenta con los siguientes atributos:identificador,fecha para cuando se registren ventas, booleano que
@@ -50,38 +64,66 @@ class Surtidor{
 private:
     string identificador;//usado en constructor
     bool activo;//usado en constructor
-    int ventaS;
-    int Litrosvend[3];
+    int VentasC[3];
 public:
     /*constructor que genera un objeto de la clase Surtidor con un codigo identificador creado a partir de el codigo de la estacion a la que 
     esta ligado y ademas se inicializa como activo para poder funcionar desde su creacion.*/
-    Surtidor(int ID_ES,string _identificador){ //ID_ES es el identificador de la estacion a la que se agrega el surtidor.
+    Surtidor(int ID_ES,char _identificador){ //ID_ES es el identificador de la estacion a la que se agrega el surtidor.
         identificador= to_string(ID_ES)+_identificador;
         activo=true;
-    }
-    void setventactual(int ventaactual){
-        ventaS=ventaactual;
-    }
-    void setlitrosvend(int R, int P, int E){
-        *(Litrosvend)=R;
-        *(Litrosvend+1)=P;
-        *(Litrosvend+2)=E;
     }
     void setActividad(bool actividad){
         activo=actividad;
     }
-    ~Surtidor(){    //Destructor de objetos de la clase Surtidor.
-        cout << "Surtidor eliminado" << endl;
-    } 
+    string getidentificador(){
+        return identificador;
+    }
+    ~Surtidor(){}    //Destructor de objetos de la clase Surtidor.
     
 };
 
-//variables y matrices para llevar control de cada uno de los precios por region y ventas por estacion.
+//variables y matrices para llevar control de cada uno de los precios por region, ventas por estacion y codigos identificadores.
 unsigned short int opcion;
 unsigned short int ID;
 int preciosComb[3][3]={{15000,20000,25000},
                        {16000,19000,25000},
                        {15500,19750,23000}};
+
+int tamanoinicial=10;
+string* NuevoA= new string[tamanoinicial];
+unsigned short int IDE_S=1;
+/*Funcion que genera letras basadas en ASCII desde la A hasta la Z que luego seran usadas para generar el codigo de los surtidores de cada 
+estacion*/
+char genletras(unsigned short int contletras){
+    char letra = 'C';
+    if (letra <= 'Z') {
+        char nuevaletra=letra+contletras;
+        return nuevaletra;
+    } else {
+        return '\0';  
+    }
+}
+
+/*Plantilla de funcion encargada de redimensionar un arreglo en caso de no tener espacio para mas elementos, se usa para los arreglos de 
+int y string de las clases E_S y Surtidor respectivamente.*/
+template <typename T>
+T* redimA(T* Arreglo, int tamarreglo, int tamarreglonuevo) {
+    
+    T* arreglonuevo = new T[tamarreglonuevo];
+
+    for (int i = 0; i < tamarreglo; i++) {
+        arreglonuevo[i] = Arreglo[i]; 
+    }
+
+    for (int i = tamarreglo; i < tamarreglonuevo; i++) {
+        arreglonuevo[i] = T(); 
+    }
+    
+    delete[] Arreglo;
+
+    return arreglonuevo; 
+}
+
 /*Funcion que basandose en el tipo de combustible solicitado devuelve el precio que se encuentra en un arreglo con los respectivos valores 
 de cada uno.
 recibe un string con el que asigna un valor al precio y lo retorna.*/
@@ -98,6 +140,7 @@ int tipoComb(string tcomb,int precios[3][3],unsigned short int region){
     }
     return precio;
 }
+
 //Funcion que convierte una cadena de caracteres a minuscula, usado para facilitar validaciones.
 string pasaramin(string cadena){
     string cadenamin="";
@@ -106,6 +149,57 @@ string pasaramin(string cadena){
         cadenamin= cadenamin+cadena[i];
     }
     return cadenamin;
+}
+
+/*Funcion que puede usarse para eliminar una linea de un archivo especifico copiando los elementos del original 
+exceptuando el que se desea eliminar y luego de eso se reemplaza la copia en el original y se elimina el original.*/
+void borrardearchivo(const string& nombreArchivo, const string& lineaABorrar) {
+    ifstream Original;
+    Original.open(nombreArchivo, ios::in);
+
+    ofstream Copia;
+    Copia.open("copia.txt", ios::out);
+    if (!Original.is_open() or !Copia.is_open()) {
+        cerr << "Error al abrir el archivo." << endl; 
+        return; 
+    }
+
+    string copiador;
+    while (getline(Original, copiador)) {
+        if (copiador.find(lineaABorrar)== string::npos) { 
+            Copia << copiador << endl;
+        }
+    }
+
+    Original.close();
+    Copia.close();
+
+    remove(nombreArchivo.c_str());
+    rename("copia.txt", nombreArchivo.c_str());
+}
+
+/*Funcion que busca en el archivo correspondiente una cadena de texto solicitada y retorna la posicion en que se encuentra o "" si no se 
+encuentra*/
+string buscarenarch(const string& nombreArchivo, const string& textoABuscar) {
+    ifstream archivo(nombreArchivo); 
+
+    if (!archivo.is_open()) { 
+        cerr << "Error al abrir el archivo: " << nombreArchivo << endl;
+        return "";
+    }
+
+    string linea;
+    size_t numeroLinea = 0; 
+
+    while (getline(archivo, linea)) {
+        numeroLinea++; 
+        if (linea.find(textoABuscar) != string::npos) { 
+            archivo.close();
+            return linea;
+        }
+    }
+    archivo.close(); 
+    return "";
 }
 
 /*Funcion que calcula el precio total de una venta teniendo en cuenta la cantidad de combustible, tipo y precio.
@@ -128,7 +222,9 @@ int venta(string tcomb, float cantidad, unsigned short int surtidor){
         cin>> tcomb;
         precio=tipoComb(tcomb,preciosComb,region);
     }
-    time_t fecha = time(NULL);
+    time_t fecha = time(nullptr);
+    char* fechasinsalto = ctime(&fecha);
+    fechasinsalto[strlen(fechasinsalto) - 1] = '\0';
     cout << "Ingrese el numero de documento para registrar en la venta" << endl;
     cin >> doc;
     while(doc>9999999999 and doc<1000000000){
@@ -161,17 +257,18 @@ int venta(string tcomb, float cantidad, unsigned short int surtidor){
     }
     float totalventa=cantidad*precio;
     cout << "Venta registrada" << endl;
-    cout << ctime(&fecha) << "Se han vendido " << cantidad << " litros "<< ", tipo de combustible vendido: " << tcomb << ", valor total pagado: " << totalventa <<", documento cliente: " << doc << ", metodo de pago: " << metodo << ", region de venta: " << regionp /* << ", vendido por el surtidor: " << surtidor*/ << endl;  
+    cout << "Vendido por el surtidor: " << surtidor << " "<< fechasinsalto << " Se han vendido " << cantidad << " litros "<< ", tipo de combustible vendido: " << tcomb << ", valor total pagado: " << totalventa <<", documento cliente: " << doc << ", metodo de pago: " << metodo << ", region de venta: " << regionp << endl;  
     ofstream historial;
     historial.open("historial.txt", ios::app);
     if (!historial.is_open()) {
         cerr << "Error al abrir el archivo." << endl; 
         return 1; 
     }
-    historial << ctime(&fecha) << "Se han vendido " << cantidad << " litros "<< ", tipo de combustible vendido: " << tcomb << ", valor total pagado: " << totalventa<< ", documento cliente: " << doc << ", metodo de pago: " << metodo << ", region de venta: " << regionp /* << ", vendido por el surtidor: " << surtidor*/<< endl;
+    historial << "Vendido por el surtidor: " << surtidor << " "<< fechasinsalto << " Se han vendido " << cantidad << " litros "<< ", tipo de combustible vendido: " << tcomb << ", valor total pagado: " << totalventa <<", documento cliente: " << doc << ", metodo de pago: " << metodo << ", region de venta: " << regionp << endl;
     historial.close();
     return totalventa;
 }
+
 //Funcion que basado en la region seleccionada cambia los valores de un arreglo por los nuevos precios de cada tipo de combustible.
 void Fijarprecios(int P_regiones[3][3]){
     unsigned short int region;
@@ -183,18 +280,34 @@ void Fijarprecios(int P_regiones[3][3]){
         cin >> nuevoprecio;
         *(*(P_regiones+i)+region)= nuevoprecio;
     }
+    opcion=0;
 }
+
 //Funcion que pide los valores necesarios para invocar al constructor de la clase E_S y genera un objeto nuevo de dicha clase.
 void AgregarES(){
     cout << "\n\n";
     string name;
     string region;
     int surtidores;
+    string gerente;
+    float coordenadaX, coordenadaY;
     cout << "Ingrese el nombre de la nueva estacion" << endl;
     cin >> name;
     cout << "Ingrese la region a la que pertenece la estacion" << endl;
     cin >> region;
     region=pasaramin(region);
+    cout << "Ingrese el nombre del gerente de la estacion" << endl;
+    cin >> gerente;
+    coordenadaX= rand()%180 + (-180);
+    if(region=="norte"){
+        coordenadaY=rand()%90 + 31;
+    }
+    else if (region=="central"){
+        coordenadaY=rand()%30 + (-31) ;
+    }
+    else {
+        coordenadaY=rand()%-30 + (-90);
+    }
     while (region!="norte" and region!="central" and region!="sur"){
         cout << "la region debe ser: norte, central o sur" << endl;
         cin >> region;
@@ -213,35 +326,124 @@ void AgregarES(){
         }
     }
     while (surtidores<2 or surtidores>12);
-    E_S* nuevaestacion= new E_S(name,region,surtidores);
+    //Se crea el objeto de manera dinamica y se ajustan todos sus atributos.
+    E_S* nuevaestacion= nullptr;
+    nuevaestacion=new E_S(name,region,surtidores);
+    nuevaestacion.setidentificador(IDE_S);
+    nuevaestacion.setcaptan();
+    nuevaestacion.setcaptanoriginal();
+    
     cout << "Se ha creado la estacion " << name << " en la region " << region << " con " << surtidores << " surtidores" << endl;
+    ofstream EstServicio;
+    EstServicio.open("Estaciones.txt", ios::app);
+    if (!EstServicio.is_open()) {
+        cerr << "Error al abrir el archivo." << endl; 
+        return; 
+    }
+    EstServicio << "ID: " << nuevaestacion.getidentificador() << " " << surtidores << " - " << gerente << " / " << region << " _ " << nuevaestacion.getcapacidadO() << " lon " <<coordenadaX << " lat " << coordenadaY ;
+    EstServicio.close();
     opcion=0;
 }
+
 //Funcion que genera un objeto de la clase surtidor y lo agrega a una estacion.
-/*int Agrelimsurtidor(){
+void Agrelimsurtidor(){
     cout << "\n\n";
-    cout << "Ingrese la estacion a la que desea agregar un surtidor";
-    ofstream surtidores;
-    surtidores.open("surtidores.txt", ios::app);
-    if (!surtidores.is_open()) {
-        cerr << "Error al abrir el archivo." << endl; 
-        return 1; 
+    unsigned short int eleccion;
+    cout << "Desea agregar o eliminar un surtidor?" << "1.Agregar\n" << "2.Eliminar" << endl;
+    cin >>eleccion;
+    while (eleccion!=1 and eleccion !=2){
+        cout << "La opcion ingresada no es valida, intente de nuevo" << endl;
+        cin >> eleccion;
     }
-    unsigned short int 
-    //surtidores << 
-    //surtidores.close();
+    switch(eleccion){
+    case 1:{/*Se abre el achivo donde se almacenan los datos de los objetos, se solicitan las variables necesarias para el constructor y se 
+            agregan al archivo el codigo y estado activo*/
+        unsigned short int cantsurtidores;
+        unsigned short int estacion;
+        cout << "Ingrese el codigo de la estacion a la que desea agregar el surtidor" << endl;
+        cin >> estacion;
+        char nuevaletra= genletras(cantsurtidores);
+        ofstream surtidores;
+        surtidores.open("surtidores.txt", ios::app);
+        if (!surtidores.is_open()) {
+            cerr << "Error al abrir el archivo." << endl; 
+            return; 
+        }
+        Surtidor nuevosurtidor= Surtidor (estacion,nuevaletra);
+        surtidores << nuevosurtidor.getidentificador() << " - " << estacion << endl;
+        for (int i=0;i<sizeof(NuevoA)-1;i++){
+            if (NuevoA[(sizeof(NuevoA)-1)]!="\0"){
+                unsigned short int tamanoact, tamanonew;
+                tamanoact=sizeof(NuevoA);
+                tamanonew=tamanoact+1;
+                redimA(NuevoA,tamanoact,tamanonew);
+                NuevoA[i+1]=nuevosurtidor.getidentificador();
+            }
+            else{
+                NuevoA[i]=nuevosurtidor.getidentificador();
+            }
+        }
+        surtidores.close();
+        break;
+        }   
+    case 2:{/*Se busca en el archivo el identificador de la estacion, si existe entonces se sigue a el codigo de surtidor y se busca la 
+            linea en que esta para eliminar toda la informacion acerca de el.*/
+        unsigned short int estacion;
+        string estacionstr;
+        string surtidoraborrar;
+        string IDsurtidor;
+        string encontrado;
+        cout << "Ingrese el codigo de la estacion a la que desea eliminarle un surtidor" << endl;
+        cin >> estacion;
+        estacionstr=to_string(estacion);
+        encontrado=buscarenarch("estaciones.txt",estacionstr);
+        if (encontrado==""){
+            cout << "No se ha encontrado ninguna estacion con el codigo identificador ingresado" << endl;
+            break;
+        }
+        cout << "Ingrese el codigo de el surtidor que desea borrar" << endl;
+        cin >>IDsurtidor;
+        surtidoraborrar=buscarenarch("surtidores.txt",IDsurtidor);
+        if (surtidoraborrar==""){
+            cout << "No se ha encontrado el codigo de surtidor ingresado dentro de la estacion" << endl;
+            break;
+        }
+        borrardearchivo("surtidores.txt",surtidoraborrar);
+        for (int i=0;i<sizeof(NuevoA)-1;i++){
+            if (NuevoA[i]==IDsurtidor){
+                NuevoA[i]="\0";
+            }
+        }
+        cout << "Se ha eliminado el surtidor " << IDsurtidor << " de la estacion " << estacion << endl;
+        break;
+        }
+    }
+}
+
+void Actdesactsurtidor(){
     
-}*/
+}
+
+void ConsultarH(){
+    
+}
+
+void Cantlitrosvend(){
+    
+}
+
+void Asignarcap(){
+    
+}
 //Funcion que elimina un objeto de la clase E_S buscando su identificador dentro de un arreglo y al encontrarlo lo elimina.
 void EliminarES(){
-    unsigned short int buscadorID;
+    string buscadorID;
     unsigned short int eliminado;
     cout << "Ingrese el codigo identificador de la E/S que desea eliminar" << endl;
     cin >> buscadorID;
-    if (eliminado==0){
-        cout << "No se ha encontrado una estacion con el codigo ingresado" << endl;
+    buscarenarch("estaciones.txt",buscadorID);
     }
-}
+    
 /*Funcion que permite acceder a diferentes funciones para hacer cambios a la red nacional como puede ser agregar/eliminar estaciones,
 calcular las ventas totales de cada una, fijar los precios para toda una region y regresar al menu principal del sistema.*/
 void GestionR(){
@@ -278,6 +480,7 @@ void GestionR(){
         }
     }
 }
+
 //Funcion que permite seleccionar una opcion correspondiente al menu de gestion de estaciones.
 void GestionES(){
     cout << "\n\n";
@@ -287,20 +490,19 @@ void GestionES(){
     while (opcion!=7){
         switch(opcion){
         case 1:
-            //Agrelimsurtidor();
+            Agrelimsurtidor();
             break;
         case 2:
-            //Actdesactsurtidor();
+            Actdesactsurtidor();
             break;
         case 3:
-            //ConsultarH();
+            ConsultarH();
             break;
         case 4:
-            //Cantlitrosvend();
-            break;
+            Cantlitrosvend();
             break;
         case 5:
-            //Asignarcap();
+               Asignarcap();
             break;
         default:
             cout << "opcion invalida, ingrese otra" << endl;
@@ -308,9 +510,31 @@ void GestionES(){
         }
     }
 }
-void Sistfugas(){
 
+/*Funcion que se encarga de sumar la cantidad de litros vendidos con los que aun hay en el tanque correspondiente y si el resultado es menor 
+que el 95% de la cantidad original se muestra un mensaje diciendo que se detecto una fuga*/
+void Sistfugas(){
+    unsigned short int repetir=1;
+    unsigned short int estacion;
+    unsigned short int litregistrados;
+    unsigned short int litrestantes;
+    unsigned short int litoriginales;
+    cout << "Bienvenido al sistema de deteccion de fugas, por favor ingrese la estacion en la cual desea realizar la revision\n\n";
+    while (repetir!=0){
+        cin >>estacion;
+        if ((litrestantes+litregistrados)<(litoriginales*19/20)){
+        cout << "Se ha detectado una fuga\n";
+        }
+        else{
+            cout << "La estacion no presenta fugas\n";
+        }
+        cout << "Desea revisar otra estacion?\n" << "1.Revisar otra estacion\n" << "0.Volver al menu principal" << endl;
+        cin >>repetir;
+    }
+    cout << "Gracias por utilizar nuestros servicios.\n\n";
+    opcion=5;
 }
+
 /*Funcion que pide el tipo de combustible a vender, genera numeros aleatorios para el surtidor(luego se pasan a str para elegir el surtidor 
 de venta),litros(3-20)*/
 void SimV(){
@@ -322,11 +546,11 @@ void SimV(){
     cin >> tipocombustible;
     tipocombustible=pasaramin(tipocombustible);
     litros=rand()% 20 + 3;
-    /*surtidor=rand()+1  identificador de el surtidor dentro de un arreglo y si no se encuentra se genera nuevamente.
-    for (int i=0; i<)*/
+    surtidor=rand()%(sizeof(NuevoA)-1);
     venta(tipocombustible,litros,surtidor);
     opcion=5;
 }
+
 //Funcion principal que permite el acceso a las diferentes funciones definidas en el programa.
 void menu(){
     cout << "Que operacion desea realizar?" << endl;
@@ -341,7 +565,7 @@ void menu(){
             GestionES();
             break;
         case 3:
-            //Sistfugas();
+            Sistfugas();
             break;
         case 4:
             SimV();
@@ -361,6 +585,8 @@ void menu(){
         }
     }
 }
+
+//Funcion principal desde la que se inicia la funcion menu y desde ella las demas funciones.
 int main(){
     srand(time(0)); //usado para que cada vez que se ejecute el programa todos los numeros aleatorios son diferentes.
     cout << "Bienvenido a TerMax" << endl;
